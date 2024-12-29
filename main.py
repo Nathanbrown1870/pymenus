@@ -4,6 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from src.widgets.label import label
+from src.panels.panel_baseclass import panel_element
 
 def main():
 
@@ -14,6 +15,12 @@ def main():
 
     test_label1 = label(text="text",x_position=1,y_position=2)
     app.add(test_label1)
+
+    test_panel = panel_element(10,10,10,10)
+    app.add(test_panel)
+
+    test_panel1 = panel_element(10,7,5,5)
+    app.add(test_panel1)
 
     app.start()
 
