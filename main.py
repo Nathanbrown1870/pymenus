@@ -10,17 +10,28 @@ def main():
 
     app = ScreenManager()
 
-    test_label = label(text="text",x_position=1,y_position=1)
+    test_label = label(text="Debug App",x_position=1,y_position=0)
     app.add(test_label)
 
-    test_label1 = label(text="text",x_position=1,y_position=2)
+    test_label1 = label(text="Hidden Text",x_position=1,y_position=2)
     app.add(test_label1)
 
-    test_panel = panel_element(10,10,10,10)
-    app.add(test_panel)
+    test_panel_overlap1 = panel_element(10,10,10,10)
+    test_panel_overlap1.add_text("this is a panel")
+    app.add(test_panel_overlap1)
 
-    test_panel1 = panel_element(10,7,5,5)
-    app.add(test_panel1)
+    test_panel_overlap_2 = panel_element(10,7,5,5)
+    test_panel_overlap_2.add_text("This is a long text on a panel and I am pretty sure that it is going to break something when it doesn't all fit")
+    app.add(test_panel_overlap_2)
+
+    # BUG: panels will render whether or not they are tracked
+    debug_panel = panel_element(30,10,30,5)
+    app.add(debug_panel)
+    element_array = []
+    for elements in app.stack:
+        for element in elements.elments:
+            element_array.append(element.identify())
+    debug_panel.add_list('\n'.join(element_array))
 
     app.start()
 

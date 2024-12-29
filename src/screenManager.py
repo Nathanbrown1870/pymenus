@@ -1,3 +1,4 @@
+import curses.panel
 import time
 import curses
 import sys
@@ -5,25 +6,27 @@ import sys
 import logging
 logger = logging.getLogger(__name__)
 
+from src.MainScreen import MainScreen
+from src.screenBase import ScreenBase as Screen
 from src.element_rootClass import TUIelement
-from src.screen_class import Screen_class as Screen
 
 class ScreenManager:
     
     def __init__(self) -> None:
-        self.screen = Screen(window=curses.initscr())
-        self.stdscr = self.screen.screen
+        self.mainScreen = MainScreen(window=curses.initscr())
+        self.stdscr = self.mainScreen.screen
         curses.noecho()
         curses.cbreak()
         curses.start_color()
         self.stdscr.keypad(True)
         self.cursor = self.Cursor()
         
+        self.screen_height, self.screen_width = self.stdscr.getmaxyx()
         # Panels might make me tracking the level of the screen stack irrelevent 
-        self.stack = [self.screen]
+        self.stack = [self.mainScreen]
 
     def add(self,element: TUIelement):
-        self.screen.elments.append(element)
+        self.mainScreen.elments.append(element)
 
     def start(self):
 
@@ -31,9 +34,26 @@ class ScreenManager:
         while True:
             self.stdscr.erase()
 
+            # Load screen elements
+            self.screen_height, self.screen_width = self.stdscr.getmaxyx()
+
+            # Calculate the height of the shorter box
+            box_height = self.screen_height - 2  # 2 rows shorter at the top and bottom
+            box_width = self.screen_width - 2  # Slightly narrower for aesthetics
+            start_y = 1 
+            start_x = 1 
+            win = curses.newwin(box_height, box_width, start_y, start_x)
+            win.box()
+            win.addstr(1, 1, "This is a smaller box!")
+            panel = curses.panel.new_panel(win)
+            panel.bottom()
+
             # load the elements
-            for elements in self.screen.elments:
-                elements.add_to_screen(self.stdscr)
+            for element in self.mainScreen.elments:
+                element.add_to_screen(self.stdscr)
+                
+                if element not in self.stack and element.is_screen:
+                    self.stack.append(element)
 
             # Refresh elements
             curses.panel.update_panels(); 
@@ -42,7 +62,7 @@ class ScreenManager:
             # capture input
             last_y, last_x = self.stdscr.getyx()
             self.stdscr.move(self.cursor.row,self.cursor.col)
-            self.handle_input(self.screen)
+            self.handle_input(self.mainScreen)
             # time.sleep(5)
 
 
@@ -56,21 +76,24 @@ class ScreenManager:
 
         height, width = screen.screen.getmaxyx()
 
+        # This is basically navigation mode
         k = screen.screen.getkey()
         if k == "q":
             sys.exit(0)
-        elif k == "KEY_UP":
+        elif k == "KEY_UP" or k == "k":
             self.cursor.up()
-        elif k == "KEY_DOWN":
+        elif k == "KEY_DOWN" or k == "j":
             self.cursor.down(height)
-        elif k == "KEY_LEFT":
+        elif k == "KEY_LEFT" or k == "h":
             self.cursor.left()
-        elif k == "KEY_RIGHT":
+        elif k == "KEY_RIGHT"or k == "l":
             self.cursor.right(width)
         elif k == "\n":
             self.cursor.right(width)
         elif k == '\t':
             self.cursor.jump_to_next(screen.elments)
+        elif k == "KEY_RESIZE":
+            screen_height, screen_width = self.stdscr.getmaxyx()
         else:
             logger.debug(k)
 
